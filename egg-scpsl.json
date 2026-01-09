@@ -17,7 +17,7 @@
         "naxefir2/scpsl-egg": "naxefir2/scpsl-egg:latest"
     },
     "file_denylist": [],
-    "startup": "if [ \"${SCPSL_DISCORD}\" = \"1\" ]; then .bin/SCPDiscord/SCPDiscordBot_Linux_SC --config .config/SCPDiscord/config.yml & fi; cd .bin/SCPSLDS && exec ./LocalAdmin {{SCPSL_PORT}}",
+    "startup": "[ \"${SCPSL_DISCORD}\" = \"1\" ] && .bin/SCPDiscord/SCPDiscordBot_Linux_SC --config .config/SCPDiscord/config.yml & cd .bin/SCPSLDS && ./LocalAdmin {{SCPSL_PORT}}",
     "config": {
         "files": "{\n    \"config/config_gameplay.txt\": {\n        \"parser\": \"properties\",\n        \"find\": {\n            \"server_name\": \"server_name: {{server.build.env.SERVER_NAME}}\",\n            \"serverinfo_pastebin_id\": \"serverinfo_pastebin_id: {{server.build.env.PASTEBIN_ID}}\"\n        }\n    }\n}",
         "startup": "{\"done\": \"Waiting for players..\"}",

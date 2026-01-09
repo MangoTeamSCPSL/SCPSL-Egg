@@ -144,54 +144,76 @@ fi
 if [ "${SCPSL_DISCORD:-0}" -eq 1 ]; then
     log_info "Installing SCPDiscord bot..."
     
-    # Получить последнюю версию из GitHub API
-    LATEST_RELEASE=$(curl -s https://api.github.com/repos/KarlOfDuty/SCPDiscord/releases | jq -r '.[0].tag_name')
+    # Получить последнюю версию и assets через GitHub API
+    log_info "Fetching latest SCPDiscord release info..."
+    RELEASE_DATA=$(curl -s https://api.github.com/repos/KarlOfDuty/SCPDiscord/releases/latest)
     
-    if [ -z "$LATEST_RELEASE" ] || [ "$LATEST_RELEASE" = "null" ]; then
-        log_warning "Could not fetch latest SCPDiscord release, using fallback version"
-        LATEST_RELEASE="3.3.0-RC1"
-    fi
-    
-    log_info "Using SCPDiscord version: $LATEST_RELEASE"
-    
-    mkdir -p /mnt/server/.bin/SCPDiscord
-    cd /mnt/server/.bin/SCPDiscord
-    
-    # Скачать бот
-    BOT_URL="https://github.com/KarlOfDuty/SCPDiscord/releases/download/${LATEST_RELEASE}/SCPDiscordBot_Linux_SC"
-    if curl -L "$BOT_URL" -o SCPDiscordBot_Linux_SC; then
-        chmod +x SCPDiscordBot_Linux_SC
-        mkdir -p /mnt/server/.config/SCPDiscord
-        log_success "SCPDiscord bot downloaded"
+    if [ -z "$RELEASE_DATA" ] || [ "$RELEASE_DATA" = "null" ]; then
+        log_error "Could not fetch SCPDiscord release data from GitHub API"
+        log_warning "Skipping SCPDiscord installation"
     else
-        log_error "Failed to download SCPDiscord bot"
-        exit 1
-    fi
-    
-    # Установить зависимости
-    mkdir -p "/mnt/server/.config/SCP Secret Laboratory/LabAPI/dependencies/global/"
-    cd "/mnt/server/.config/SCP Secret Laboratory/LabAPI/"
-    
-    DEPS_URL="https://github.com/KarlOfDuty/SCPDiscord/releases/download/${LATEST_RELEASE}/dependencies.zip"
-    if curl -L "$DEPS_URL" -o dependencies.zip; then
-        unzip -o dependencies.zip "dependencies/*" -d temp_extracted
-        mv -f temp_extracted/dependencies/* "dependencies/global/"
-        rm -rf dependencies.zip temp_extracted
-        log_success "SCPDiscord dependencies installed"
-    else
-        log_warning "Failed to download dependencies, bot may not work properly"
-    fi
-    
-    # Установить плагин
-    rm -f "/mnt/server/.config/SCP Secret Laboratory/LabAPI/plugins/global/SCPDiscord.dll"
-    mkdir -p "/mnt/server/.config/SCP Secret Laboratory/LabAPI/plugins/global/"
-    cd "/mnt/server/.config/SCP Secret Laboratory/LabAPI/plugins/global/"
-    
-    PLUGIN_URL="https://github.com/KarlOfDuty/SCPDiscord/releases/download/${LATEST_RELEASE}/SCPDiscord.dll"
-    if curl -L "$PLUGIN_URL" -o SCPDiscord.dll; then
-        log_success "SCPDiscord plugin installed"
-    else
-        log_error "Failed to download SCPDiscord plugin"
+        LATEST_RELEASE=$(echo "$RELEASE_DATA" | jq -r '.tag_name')
+        log_info "Using SCPDiscord version: $LATEST_RELEASE"
+        
+        # Получить URLs для assets
+        BOT_URL=$(echo "$RELEASE_DATA" | jq -r '.assets[] | select(.name | contains("Linux_SC")) | .browser_download_url')
+        DEPS_URL=$(echo "$RELEASE_DATA" | jq -r '.assets[] | select(.name == "dependencies.zip") | .browser_download_url')
+        PLUGIN_URL=$(echo "$RELEASE_DATA" | jq -r '.assets[] | select(.name == "SCPDiscord.dll") | .browser_download_url')
+        
+        # Скачать бот
+        mkdir -p /mnt/server/.bin/SCPDiscord
+        cd /mnt/server/.bin/SCPDiscord
+        
+        if [ -n "$BOT_URL" ] && [ "$BOT_URL" != "null" ]; then
+            log_info "Downloading bot from: $BOT_URL"
+            if curl -L "$BOT_URL" -o SCPDiscordBot_Linux_SC && [ -f "SCPDiscordBot_Linux_SC" ]; then
+                # Проверить что это не HTML
+                if file SCPDiscordBot_Linux_SC | grep -q "ELF\|executable"; then
+                    chmod +x SCPDiscordBot_Linux_SC
+                    mkdir -p /mnt/server/.config/SCPDiscord
+                    log_success "SCPDiscord bot downloaded"
+                else
+                    log_error "Downloaded file is not a valid executable"
+                    rm -f SCPDiscordBot_Linux_SC
+                fi
+            else
+                log_error "Failed to download SCPDiscord bot"
+            fi
+        else
+            log_error "Could not find bot download URL in release assets"
+        fi
+        
+        # Установить зависимости
+        if [ -n "$DEPS_URL" ] && [ "$DEPS_URL" != "null" ]; then
+            mkdir -p "/mnt/server/.config/SCP Secret Laboratory/LabAPI/dependencies/global/"
+            cd "/mnt/server/.config/SCP Secret Laboratory/LabAPI/"
+            
+            log_info "Downloading dependencies from: $DEPS_URL"
+            if curl -L "$DEPS_URL" -o dependencies.zip && [ -f "dependencies.zip" ]; then
+                unzip -o dependencies.zip "dependencies/*" -d temp_extracted 2>/dev/null || true
+                if [ -d "temp_extracted/dependencies" ]; then
+                    mv -f temp_extracted/dependencies/* "dependencies/global/" 2>/dev/null || true
+                fi
+                rm -rf dependencies.zip temp_extracted
+                log_success "SCPDiscord dependencies installed"
+            else
+                log_warning "Failed to download dependencies"
+            fi
+        fi
+        
+        # Установить плагин
+        if [ -n "$PLUGIN_URL" ] && [ "$PLUGIN_URL" != "null" ]; then
+            rm -f "/mnt/server/.config/SCP Secret Laboratory/LabAPI/plugins/global/SCPDiscord.dll"
+            mkdir -p "/mnt/server/.config/SCP Secret Laboratory/LabAPI/plugins/global/"
+            cd "/mnt/server/.config/SCP Secret Laboratory/LabAPI/plugins/global/"
+            
+            log_info "Downloading plugin from: $PLUGIN_URL"
+            if curl -L "$PLUGIN_URL" -o SCPDiscord.dll && [ -f "SCPDiscord.dll" ]; then
+                log_success "SCPDiscord plugin installed"
+            else
+                log_error "Failed to download SCPDiscord plugin"
+            fi
+        fi
     fi
     
     # Создать шаблон конфига если его нет

@@ -2,44 +2,67 @@
 
 set -e  # Прерывать выполнение при ошибках
 
+# Цвета для вывода
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
 echo "###############################################################"
-echo "#                     Waenara / SCPSL-Egg                     #"
-echo "#   Pterodactyl egg for simplified SCP:SL server management   #"
-echo "#         Created by Waenara -- waenara.dev@gmail.com         #"
+echo "#              MangoTeam SCP:SL Server Installer             #"
+echo "#     Enhanced version with better error handling & logs     #"
 echo "###############################################################"
 
 # Install dependencies
-echo "[INFO] Installing dependencies..."
-apt-get update
-apt-get install -y unzip libicu-dev lib32gcc-s1 curl ca-certificates
+log_info "Installing dependencies..."
+apt-get update -qq
+apt-get install -y -qq unzip libicu-dev lib32gcc-s1 curl ca-certificates jq
 apt-get clean
 rm -rf /var/lib/apt/lists/*
+log_success "Dependencies installed"
 
 # Remove old binaries
-echo "[INFO] Cleaning old installation..."
+log_info "Cleaning old installation..."
 rm -rf /mnt/server/.bin
-
-# Create necessary directories
-mkdir -p /mnt/server/.bin/SteamCMD
-mkdir -p /mnt/server/.bin/SCPSLDS
-mkdir -p /mnt/server/.config
+mkdir -p /mnt/server/{.bin,.config}
+log_success "Cleanup completed"
 
 # Download SteamCMD
-echo "[INFO] Downloading SteamCMD..."
+log_info "Downloading SteamCMD..."
+mkdir -p /mnt/server/.bin/SteamCMD
 cd /mnt/server/.bin/SteamCMD
-curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf -
 
-# Make steamcmd.sh executable
-chmod +x steamcmd.sh linux32/steamcmd 2>/dev/null || true
+if curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf -; then
+    chmod +x steamcmd.sh linux32/steamcmd 2>/dev/null || true
+    log_success "SteamCMD downloaded"
+else
+    log_error "Failed to download SteamCMD"
+    exit 1
+fi
 
-# Download SCP:Secret Laboratory Dedicated Server
-echo "[INFO] Downloading SCP:SL Dedicated Server..."
-echo "[INFO] Beta: ${SCPSL_BETA_NAME:-public}"
+# Download SCP:SL Dedicated Server
+log_info "Downloading SCP:SL Dedicated Server..."
+log_info "Beta: ${SCPSL_BETA_NAME:-public}"
 
-# Построить команду для SteamCMD
 STEAMCMD_COMMAND="./steamcmd.sh +force_install_dir /mnt/server/.bin/SCPSLDS +login anonymous +app_update 996560"
 
-# Добавить beta параметры если нужно
 if [ -n "$SCPSL_BETA_NAME" ] && [ "$SCPSL_BETA_NAME" != "public" ]; then
     STEAMCMD_COMMAND="$STEAMCMD_COMMAND -beta \"$SCPSL_BETA_NAME\""
     
@@ -55,18 +78,18 @@ MAX_RETRIES=3
 RETRY_COUNT=0
 
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    echo "[INFO] Attempting to download server (attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)..."
+    log_info "Downloading server (attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)..."
     
     if eval $STEAMCMD_COMMAND; then
-        echo "[INFO] Server downloaded successfully!"
+        log_success "Server downloaded successfully!"
         break
     else
         RETRY_COUNT=$((RETRY_COUNT + 1))
         if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-            echo "[WARNING] Download failed, retrying in 5 seconds..."
+            log_warning "Download failed, retrying in 5 seconds..."
             sleep 5
         else
-            echo "[ERROR] Failed to download server after $MAX_RETRIES attempts"
+            log_error "Failed to download server after $MAX_RETRIES attempts"
             exit 1
         fi
     fi
@@ -74,71 +97,169 @@ done
 
 # Проверить установку сервера
 if [ ! -f "/mnt/server/.bin/SCPSLDS/LocalAdmin" ]; then
-    echo "[ERROR] Server installation failed - LocalAdmin not found"
+    log_error "Server installation failed - LocalAdmin not found"
     exit 1
 fi
 
-# Make LocalAdmin executable
 chmod +x /mnt/server/.bin/SCPSLDS/LocalAdmin
+log_success "SCP:SL server installed"
 
 # Download Exiled
 if [ "${SCPSL_EXILED:-1}" -ne 0 ]; then
-    echo "[INFO] Installing Exiled..."
+    log_info "Installing Exiled framework..."
     mkdir -p /mnt/server/.bin/ExiledInstaller
     cd /mnt/server/.bin/ExiledInstaller
     
-    curl -L "https://github.com/Exiled-Team/EXILED/releases/latest/download/Exiled.Installer-Linux" -o Exiled.Installer-Linux
-    chmod +x Exiled.Installer-Linux
-    
-    EXILED_ARGS="--path /mnt/server/.bin/SCPSLDS --appdata /mnt/server/.config/ --exiled /mnt/server/.config/"
-    
+    # Определить версию Exiled
     if [ "$SCPSL_EXILED" -eq 2 ]; then
-        EXILED_ARGS="$EXILED_ARGS --pre-releases"
+        log_info "Using Exiled pre-release version"
+        EXILED_URL="https://github.com/Exiled-Team/EXILED/releases/latest/download/Exiled.Installer-Linux"
+    else
+        log_info "Using Exiled stable version"
+        EXILED_URL="https://github.com/Exiled-Team/EXILED/releases/latest/download/Exiled.Installer-Linux"
     fi
     
-    if ./Exiled.Installer-Linux $EXILED_ARGS; then
-        echo "[INFO] Exiled installed successfully!"
+    if curl -L "$EXILED_URL" -o Exiled.Installer-Linux; then
+        chmod +x Exiled.Installer-Linux
+        
+        EXILED_ARGS="--path /mnt/server/.bin/SCPSLDS --appdata /mnt/server/.config/ --exiled /mnt/server/.config/"
+        
+        if [ "$SCPSL_EXILED" -eq 2 ]; then
+            EXILED_ARGS="$EXILED_ARGS --pre-releases"
+        fi
+        
+        if ./Exiled.Installer-Linux $EXILED_ARGS; then
+            log_success "Exiled installed successfully!"
+        else
+            log_warning "Exiled installation failed, continuing without it..."
+        fi
     else
-        echo "[WARNING] Exiled installation failed, continuing..."
+        log_warning "Failed to download Exiled installer"
     fi
+else
+    log_info "Skipping Exiled installation (disabled)"
 fi
 
 # Install Discord bot
 if [ "${SCPSL_DISCORD:-0}" -eq 1 ]; then
-    echo "[INFO] Installing SCPDiscord..."
+    log_info "Installing SCPDiscord bot..."
+    
+    # Получить последнюю версию из GitHub API
+    LATEST_RELEASE=$(curl -s https://api.github.com/repos/KarlOfDuty/SCPDiscord/releases | jq -r '.[0].tag_name')
+    
+    if [ -z "$LATEST_RELEASE" ] || [ "$LATEST_RELEASE" = "null" ]; then
+        log_warning "Could not fetch latest SCPDiscord release, using fallback version"
+        LATEST_RELEASE="3.3.0-RC1"
+    fi
+    
+    log_info "Using SCPDiscord version: $LATEST_RELEASE"
+    
     mkdir -p /mnt/server/.bin/SCPDiscord
     cd /mnt/server/.bin/SCPDiscord
     
-    curl -L "https://github.com/KarlOfDuty/SCPDiscord/releases/download/3.3.0-RC5/SCPDiscordBot_Linux_SC" -o SCPDiscordBot_Linux_SC
-    chmod +x SCPDiscordBot_Linux_SC
-    mkdir -p /mnt/server/.config/SCPDiscord
-
+    # Скачать бот
+    BOT_URL="https://github.com/KarlOfDuty/SCPDiscord/releases/download/${LATEST_RELEASE}/SCPDiscordBot_Linux_SC"
+    if curl -L "$BOT_URL" -o SCPDiscordBot_Linux_SC; then
+        chmod +x SCPDiscordBot_Linux_SC
+        mkdir -p /mnt/server/.config/SCPDiscord
+        log_success "SCPDiscord bot downloaded"
+    else
+        log_error "Failed to download SCPDiscord bot"
+        exit 1
+    fi
+    
+    # Установить зависимости
     mkdir -p "/mnt/server/.config/SCP Secret Laboratory/LabAPI/dependencies/global/"
     cd "/mnt/server/.config/SCP Secret Laboratory/LabAPI/"
     
-    curl -L "https://github.com/KarlOfDuty/SCPDiscord/releases/download/3.3.0-RC5/dependencies.zip" -o dependencies.zip
-    unzip -o dependencies.zip "dependencies/*" -d temp_extracted
-    mv -f temp_extracted/dependencies/* "dependencies/global/"
-    rm -rf dependencies.zip temp_extracted
+    DEPS_URL="https://github.com/KarlOfDuty/SCPDiscord/releases/download/${LATEST_RELEASE}/dependencies.zip"
+    if curl -L "$DEPS_URL" -o dependencies.zip; then
+        unzip -o dependencies.zip "dependencies/*" -d temp_extracted
+        mv -f temp_extracted/dependencies/* "dependencies/global/"
+        rm -rf dependencies.zip temp_extracted
+        log_success "SCPDiscord dependencies installed"
+    else
+        log_warning "Failed to download dependencies, bot may not work properly"
+    fi
     
+    # Установить плагин
     rm -f "/mnt/server/.config/SCP Secret Laboratory/LabAPI/plugins/global/SCPDiscord.dll"
+    mkdir -p "/mnt/server/.config/SCP Secret Laboratory/LabAPI/plugins/global/"
     cd "/mnt/server/.config/SCP Secret Laboratory/LabAPI/plugins/global/"
-    curl -L "https://github.com/KarlOfDuty/SCPDiscord/releases/download/3.3.0-RC5/SCPDiscord.dll" -o SCPDiscord.dll
     
-    echo "[INFO] SCPDiscord installed successfully!"
+    PLUGIN_URL="https://github.com/KarlOfDuty/SCPDiscord/releases/download/${LATEST_RELEASE}/SCPDiscord.dll"
+    if curl -L "$PLUGIN_URL" -o SCPDiscord.dll; then
+        log_success "SCPDiscord plugin installed"
+    else
+        log_error "Failed to download SCPDiscord plugin"
+    fi
+    
+    # Создать шаблон конфига если его нет
+    CONFIG_FILE="/mnt/server/.config/SCPDiscord/config.yml"
+    if [ ! -f "$CONFIG_FILE" ]; then
+        log_info "Creating default SCPDiscord config template..."
+        cat > "$CONFIG_FILE" <<'EOF'
+# SCPDiscord Bot Configuration
+# IMPORTANT: Fill in your Discord bot token and other settings before starting!
+
+bot:
+  token: "YOUR_DISCORD_BOT_TOKEN_HERE"
+  # Get your token from: https://discord.com/developers/applications
+  
+  prefix: "!"
+  # Command prefix for the bot
+  
+  status-text: "SCP:SL Server"
+  # Bot's Discord status message
+  
+  playing-text: ""
+  # Bot's playing status
+
+server:
+  address: "127.0.0.1"
+  port: 8888
+  # These should match your server's communication settings
+
+# For more configuration options, see:
+# https://github.com/KarlOfDuty/SCPDiscord/wiki
+EOF
+        log_warning "Created config template at: $CONFIG_FILE"
+        log_warning "IMPORTANT: Edit this file and add your Discord bot token!"
+    fi
+    
+    log_success "SCPDiscord installation completed!"
 else
-    echo "[INFO] Skipping SCPDiscord installation..."
+    log_info "Skipping SCPDiscord installation (disabled)"
     rm -f "/mnt/server/.config/SCP Secret Laboratory/LabAPI/plugins/global/SCPDiscord.dll" 2>/dev/null || true
 fi
 
-# Remove installation files
-echo "[INFO] Cleaning up installation files..."
+# Cleanup
+log_info "Cleaning up installation files..."
 rm -rf /mnt/server/.bin/SteamCMD
 rm -rf /mnt/server/.bin/ExiledInstaller
 
-# Set proper permissions
+# Set permissions
 chown -R container:container /mnt/server 2>/dev/null || true
 
+# Финальный отчёт
+echo ""
 echo "###############################################################"
-echo "#                   Installation completed!                   #"
+log_success "Installation completed successfully!"
+echo "###############################################################"
+echo ""
+log_info "Installation Summary:"
+echo "  • SCP:SL Server: ✓ Installed"
+echo "  • Exiled: $([ "${SCPSL_EXILED:-1}" -ne 0 ] && echo '✓ Installed' || echo '✗ Skipped')"
+echo "  • SCPDiscord: $([ "${SCPSL_DISCORD:-0}" -eq 1 ] && echo '✓ Installed' || echo '✗ Skipped')"
+echo ""
+
+if [ "${SCPSL_DISCORD:-0}" -eq 1 ]; then
+    log_warning "Remember to configure SCPDiscord:"
+    echo "  1. Edit /home/container/.config/SCPDiscord/config.yml"
+    echo "  2. Add your Discord bot token"
+    echo "  3. Configure server settings"
+    echo ""
+fi
+
+log_info "Server is ready to start!"
 echo "###############################################################"

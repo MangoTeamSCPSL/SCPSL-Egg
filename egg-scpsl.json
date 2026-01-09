@@ -10,7 +10,7 @@
     "description": "A Pterodactyl egg that simplifies the deployment and management of SCP: Secret Laboratory (SCP:SL) game servers using the Pterodactyl panel.",
     "features": null,
     "docker_images": {
-        "waenaradev/scpsl-egg": "waenaradev/scpsl-egg:latest"
+        "waenaradev/scpsl-egg": "naxefir2/scpsl-egg:latest"
     },
     "file_denylist": [],
     "startup": "[ \"$SCPDISCORD_INSTALLATION\" -eq 1 ] && /home/container/.bin/SCPDiscord/SCPDiscordBot_Linux_SC --config /home/container/.config/SCPDiscord/config.yml & cd /home/container/.bin/SCPSLDS && exec ./LocalAdmin \"$SERVER_PORT\"",

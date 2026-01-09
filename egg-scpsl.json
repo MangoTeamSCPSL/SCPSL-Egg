@@ -5,24 +5,24 @@
         "update_url": null
     },
     "exported_at": "2025-01-10T15:17:36+03:00",
-    "name": "SCP:Secret Laboratory",
+    "name": "SCP Secret Laboratory",
     "author": "waenara.dev@gmail.com",
-    "description": "A Pterodactyl egg that simplifies the deployment and management of SCP: Secret Laboratory (SCP:SL) game servers using the Pterodactyl panel.",
+    "description": "SCP Secret Laboratory dedicated server",
     "features": null,
     "docker_images": {
         "naxefir2/scpsl-egg": "naxefir2/scpsl-egg:latest"
     },
     "file_denylist": [],
-    "startup": "cd /home/container/.bin/SCPSLDS && exec ./LocalAdmin {{SERVER_PORT}}",
+    "startup": "cd .bin/SCPSLDS && ./LocalAdmin {{SCPSL_PORT}}",
     "config": {
         "files": "{}",
-        "startup": "{\n    \"done\": \"Waiting for players..\"\n}",
+        "startup": "{\"done\": \"Waiting for players..\"}",
         "logs": "{}",
         "stop": "exit"
     },
     "scripts": {
         "installation": {
-            "script": "#!/bin/bash\n\napt-get update\napt-get install -y curl ca-certificates\nbash <(curl -sL https://raw.githubusercontent.com/MangoTeamSCPSL/SCPSL-Egg/main/docker/install.sh)",
+            "script": "#!/bin/bash\napt-get update\napt-get install -y curl\nbash <(curl -sL https://raw.githubusercontent.com/MangoTeamSCPSL/SCPSL-Egg/main/docker/install.sh)",
             "container": "ubuntu:24.04",
             "entrypoint": "bash"
         }
@@ -30,52 +30,52 @@
     "variables": [
         {
             "name": "Server Port",
-            "description": "Port for the game server. Default SCP:SL port is 7777.",
-            "env_variable": "SERVER_PORT",
+            "description": "Game server port",
+            "env_variable": "SCPSL_PORT",
             "default_value": "7777",
             "user_viewable": true,
             "user_editable": true,
-            "rules": "required|integer|between:1024,65535",
+            "rules": "required|integer",
             "field_type": "text"
         },
         {
-            "name": "Exiled Installation Variant",
-            "description": "Defines the installation option for the Exiled framework. 0 - Do not install Exiled. 1 - Install the stable release version of Exiled. 2 - Install the pre-release version of Exiled.",
-            "env_variable": "EXILED_INSTALLATION",
+            "name": "Exiled Installation",
+            "description": "0=No, 1=Stable, 2=Pre-release",
+            "env_variable": "SCPSL_EXILED",
             "default_value": "1",
             "user_viewable": true,
             "user_editable": true,
-            "rules": "required|integer|in:0,1,2",
+            "rules": "required|integer",
             "field_type": "text"
         },
         {
-            "name": "Use SCPDiscord?",
-            "description": "Toggle to use the SCPDiscord plugin. Set to 1 to download it during server installation and run it on server start. Set to 0 to skip downloading during installation and prevent it from starting.",
-            "env_variable": "SCPDISCORD_INSTALLATION",
+            "name": "SCPDiscord",
+            "description": "Install SCPDiscord plugin",
+            "env_variable": "SCPSL_DISCORD",
             "default_value": "0",
             "user_viewable": true,
             "user_editable": true,
-            "rules": "required|boolean",
+            "rules": "required|integer",
             "field_type": "text"
         },
         {
-            "name": "Beta name",
-            "description": "Specifies the SteamCMD beta branch name for the server installation. Enter the name of the desired beta branch to use. Use public to select the public branch.",
-            "env_variable": "BETA_NAME",
+            "name": "Beta Branch",
+            "description": "SteamCMD beta branch name",
+            "env_variable": "SCPSL_BETA_NAME",
             "default_value": "public",
             "user_viewable": true,
             "user_editable": true,
-            "rules": "required|string|max:50",
+            "rules": "required|string",
             "field_type": "text"
         },
         {
-            "name": "Beta password",
-            "description": "Specifies the SteamCMD beta password for the server installation. Enter the password required to access the selected beta branch. Use none if no password is required.",
-            "env_variable": "BETA_PASSWORD",
+            "name": "Beta Password",
+            "description": "Beta branch password",
+            "env_variable": "SCPSL_BETA_PASS",
             "default_value": "none",
             "user_viewable": true,
             "user_editable": true,
-            "rules": "required|string|max:200",
+            "rules": "required|string",
             "field_type": "text"
         }
     ]

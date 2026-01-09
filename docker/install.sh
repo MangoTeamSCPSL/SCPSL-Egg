@@ -34,17 +34,17 @@ chmod +x steamcmd.sh linux32/steamcmd 2>/dev/null || true
 
 # Download SCP:Secret Laboratory Dedicated Server
 echo "[INFO] Downloading SCP:SL Dedicated Server..."
-echo "[INFO] Beta: ${BETA_NAME:-public}"
+echo "[INFO] Beta: ${SCPSL_BETA_NAME:-public}"
 
 # Построить команду для SteamCMD
 STEAMCMD_COMMAND="./steamcmd.sh +force_install_dir /mnt/server/.bin/SCPSLDS +login anonymous +app_update 996560"
 
 # Добавить beta параметры если нужно
-if [ -n "$BETA_NAME" ] && [ "$BETA_NAME" != "public" ]; then
-    STEAMCMD_COMMAND="$STEAMCMD_COMMAND -beta \"$BETA_NAME\""
+if [ -n "$SCPSL_BETA_NAME" ] && [ "$SCPSL_BETA_NAME" != "public" ]; then
+    STEAMCMD_COMMAND="$STEAMCMD_COMMAND -beta \"$SCPSL_BETA_NAME\""
     
-    if [ -n "$BETA_PASSWORD" ] && [ "$BETA_PASSWORD" != "none" ]; then
-        STEAMCMD_COMMAND="$STEAMCMD_COMMAND -betapassword \"$BETA_PASSWORD\""
+    if [ -n "$SCPSL_BETA_PASS" ] && [ "$SCPSL_BETA_PASS" != "none" ]; then
+        STEAMCMD_COMMAND="$STEAMCMD_COMMAND -betapassword \"$SCPSL_BETA_PASS\""
     fi
 fi
 
@@ -82,7 +82,7 @@ fi
 chmod +x /mnt/server/.bin/SCPSLDS/LocalAdmin
 
 # Download Exiled
-if [ "${EXILED_INSTALLATION:-1}" -ne 0 ]; then
+if [ "${SCPSL_EXILED:-1}" -ne 0 ]; then
     echo "[INFO] Installing Exiled..."
     mkdir -p /mnt/server/.bin/ExiledInstaller
     cd /mnt/server/.bin/ExiledInstaller
@@ -92,7 +92,7 @@ if [ "${EXILED_INSTALLATION:-1}" -ne 0 ]; then
     
     EXILED_ARGS="--path /mnt/server/.bin/SCPSLDS --appdata /mnt/server/.config/ --exiled /mnt/server/.config/"
     
-    if [ "$EXILED_INSTALLATION" -eq 2 ]; then
+    if [ "$SCPSL_EXILED" -eq 2 ]; then
         EXILED_ARGS="$EXILED_ARGS --pre-releases"
     fi
     
@@ -104,7 +104,7 @@ if [ "${EXILED_INSTALLATION:-1}" -ne 0 ]; then
 fi
 
 # Install Discord bot
-if [ "${SCPDISCORD_INSTALLATION:-0}" -eq 1 ]; then
+if [ "${SCPSL_DISCORD:-0}" -eq 1 ]; then
     echo "[INFO] Installing SCPDiscord..."
     mkdir -p /mnt/server/.bin/SCPDiscord
     cd /mnt/server/.bin/SCPDiscord

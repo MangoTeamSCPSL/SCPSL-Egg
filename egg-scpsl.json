@@ -10,19 +10,19 @@
     "description": "A Pterodactyl egg that simplifies the deployment and management of SCP: Secret Laboratory (SCP:SL) game servers using the Pterodactyl panel.",
     "features": null,
     "docker_images": {
-        "waenaradev/scpsl-egg": "naxefir2/scpsl-egg:latest"
+        "naxefir2/scpsl-egg": "naxefir2/scpsl-egg:latest"
     },
     "file_denylist": [],
-    "startup": "[ \"$SCPDISCORD_INSTALLATION\" -eq 1 ] && /home/container/.bin/SCPDiscord/SCPDiscordBot_Linux_SC --config /home/container/.config/SCPDiscord/config.yml & cd /home/container/.bin/SCPSLDS && exec ./LocalAdmin \"$SERVER_PORT\"",
+    "startup": "cd /home/container/.bin/SCPSLDS && exec ./LocalAdmin {{SERVER_PORT}}",
     "config": {
         "files": "{}",
-        "startup": "{\r\n    \"done\": \"Waiting for players..\"\r\n}",
+        "startup": "{\n    \"done\": \"Waiting for players..\"\n}",
         "logs": "{}",
         "stop": "exit"
     },
     "scripts": {
         "installation": {
-            "script": "#!/bin/bash\r\n\r\napt-get update\r\napt-get install -y curl ca-certificates\r\nbash <(curl -sL https://raw.githubusercontent.com/MangoTeamSCPSL/SCPSL-Egg/main/docker/install.sh)",
+            "script": "#!/bin/bash\n\napt-get update\napt-get install -y curl ca-certificates\nbash <(curl -sL https://raw.githubusercontent.com/MangoTeamSCPSL/SCPSL-Egg/main/docker/install.sh)",
             "container": "ubuntu:24.04",
             "entrypoint": "bash"
         }
@@ -40,7 +40,7 @@
         },
         {
             "name": "Exiled Installation Variant",
-            "description": "Defines the installation option for the Exiled framework.\r\n\r\n0: Do not install Exiled.\r\n1: Install the stable release version of Exiled.\r\n2: Install the pre-release version of Exiled.",
+            "description": "Defines the installation option for the Exiled framework. 0 - Do not install Exiled. 1 - Install the stable release version of Exiled. 2 - Install the pre-release version of Exiled.",
             "env_variable": "EXILED_INSTALLATION",
             "default_value": "1",
             "user_viewable": true,
@@ -60,7 +60,7 @@
         },
         {
             "name": "Beta name",
-            "description": "Specifies the SteamCMD beta branch name for the server installation. Enter the name of the desired beta branch to use. Use \"public\" to select the public branch.",
+            "description": "Specifies the SteamCMD beta branch name for the server installation. Enter the name of the desired beta branch to use. Use public to select the public branch.",
             "env_variable": "BETA_NAME",
             "default_value": "public",
             "user_viewable": true,
@@ -70,7 +70,7 @@
         },
         {
             "name": "Beta password",
-            "description": "Specifies the SteamCMD beta password for the server installation. Enter the password required to access the selected beta branch. Use \"none\" if no password is required.",
+            "description": "Specifies the SteamCMD beta password for the server installation. Enter the password required to access the selected beta branch. Use none if no password is required.",
             "env_variable": "BETA_PASSWORD",
             "default_value": "none",
             "user_viewable": true,

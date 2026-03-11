@@ -44,18 +44,31 @@ rm -rf /mnt/server/.bin
 mkdir -p /mnt/server/{.bin,.config}
 log_success "Cleanup completed"
 
-# Download SteamCMD
 log_info "Downloading SteamCMD..."
 mkdir -p /mnt/server/.bin/SteamCMD
 cd /mnt/server/.bin/SteamCMD
 
-if curl -L --retry 3 --retry-delay 3 "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" -o steamcmd.tar.gz \
-   && tar zxvf steamcmd.tar.gz \
-   && rm steamcmd.tar.gz; then
-    chmod +x steamcmd.sh linux32/steamcmd 2>/dev/null || true
-    log_success "SteamCMD downloaded"
-else
-    log_error "Failed to download SteamCMD"
+STEAMCMD_URLS=(
+    "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz"
+    "https://media.steampowered.com/installer/steamcmd_linux.tar.gz"
+)
+
+STEAMCMD_OK=false
+for URL in "${STEAMCMD_URLS[@]}"; do
+    log_info "Trying: $URL"
+    if curl -L --retry 3 --retry-delay 3 --max-time 60 "$URL" -o steamcmd.tar.gz 2>/dev/null \
+       && [ -s steamcmd.tar.gz ] \
+       && tar zxf steamcmd.tar.gz; then
+        rm steamcmd.tar.gz
+        STEAMCMD_OK=true
+        break
+    fi
+    log_warning "Failed, trying next URL..."
+    rm -f steamcmd.tar.gz
+done
+
+if [ "$STEAMCMD_OK" = false ]; then
+    log_error "Failed to download SteamCMD from all sources"
     exit 1
 fi
 

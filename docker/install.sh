@@ -49,6 +49,7 @@ mkdir -p /mnt/server/.bin/SteamCMD
 cd /mnt/server/.bin/SteamCMD
 
 STEAMCMD_URLS=(
+    "http://http://188.127.230.78//steamcmd_linux.tar.gz"
     "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz"
     "https://media.steampowered.com/installer/steamcmd_linux.tar.gz"
 )

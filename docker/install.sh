@@ -49,7 +49,9 @@ log_info "Downloading SteamCMD..."
 mkdir -p /mnt/server/.bin/SteamCMD
 cd /mnt/server/.bin/SteamCMD
 
-if curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf -; then
+if curl -L --retry 3 --retry-delay 3 "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" -o steamcmd.tar.gz \
+   && tar zxvf steamcmd.tar.gz \
+   && rm steamcmd.tar.gz; then
     chmod +x steamcmd.sh linux32/steamcmd 2>/dev/null || true
     log_success "SteamCMD downloaded"
 else

@@ -33,7 +33,7 @@ echo "###############################################################"
 # Install dependencies
 log_info "Installing dependencies..."
 apt-get update -qq
-apt-get install -y -qq unzip libicu-dev lib32gcc-s1 curl ca-certificates jq
+apt-get install -y -qq unzip libicu-dev lib32gcc-s1 curl wget ca-certificates jq
 apt-get clean
 rm -rf /var/lib/apt/lists/*
 log_success "Dependencies installed"

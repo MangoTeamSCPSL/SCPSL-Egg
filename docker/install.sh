@@ -50,19 +50,30 @@ mkdir -p /mnt/server/.bin/SteamCMD
 cd /mnt/server/.bin/SteamCMD
 
 STEAMCMD_URLS=(
-    "http://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz"
-    "http://media.steampowered.com/installer/steamcmd_linux.tar.gz"
+    "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz"
+    "https://media.steampowered.com/installer/steamcmd_linux.tar.gz"
 )
 
 STEAMCMD_OK=false
 for URL in "${STEAMCMD_URLS[@]}"; do
-    log_info "Trying (HTTP via wget): $URL"
-    if wget -q --timeout=15 --tries=3 -O steamcmd.tar.gz "$URL" && [ -s steamcmd.tar.gz ] && tar zxf steamcmd.tar.gz; then
-        rm steamcmd.tar.gz
-        STEAMCMD_OK=true
-        break
+    log_info "Trying (curl IPv4): $URL"
+    
+    if curl -4 -k -L --retry 3 --max-time 60 -o steamcmd.tar.gz "$URL"; then
+        if [ -s steamcmd.tar.gz ]; then
+            if tar zxf steamcmd.tar.gz; then
+                rm steamcmd.tar.gz
+                STEAMCMD_OK=true
+                break
+            else
+                log_error "Archive extraction failed."
+            fi
+        else
+            log_error "Downloaded file is empty."
+        fi
+    else
+        log_warning "curl failed to download from this URL."
     fi
-    log_warning "Failed, trying next URL..."
+    
     rm -f steamcmd.tar.gz
 done
 

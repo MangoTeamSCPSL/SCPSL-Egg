@@ -56,12 +56,25 @@ STEAMCMD_URLS=(
 STEAMCMD_OK=false
 for URL in "${STEAMCMD_URLS[@]}"; do
     log_info "Trying: $URL"
-    if curl -k -L --retry 3 --retry-delay 3 --max-time 60 "$URL" -o steamcmd.tar.gz 2>/dev/null && [ -s steamcmd.tar.gz ] && tar zxf steamcmd.tar.gz; then
-        rm steamcmd.tar.gz
-        STEAMCMD_OK=true
-        break
+    
+    # Убрали 2>/dev/null, добавили -4 (только IPv4) и -v (дебаг лог)
+    if curl -k -L -v -4 --retry 3 --retry-delay 3 --max-time 60 "$URL" -o steamcmd.tar.gz; then
+        if [ -s steamcmd.tar.gz ]; then
+            if tar zxf steamcmd.tar.gz; then
+                rm steamcmd.tar.gz
+                STEAMCMD_OK=true
+                break
+            else
+                log_warning "tar extraction failed! Showing first 5 lines of the downloaded file:"
+                head -n 5 steamcmd.tar.gz
+            fi
+        else
+            log_warning "The downloaded file is empty!"
+        fi
+    else
+        log_warning "curl failed to download from this URL!"
     fi
-    log_warning "Failed, trying next URL..."
+    
     rm -f steamcmd.tar.gz
 done
 

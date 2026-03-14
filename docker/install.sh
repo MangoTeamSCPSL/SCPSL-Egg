@@ -50,15 +50,14 @@ mkdir -p /mnt/server/.bin/SteamCMD
 cd /mnt/server/.bin/SteamCMD
 
 STEAMCMD_URLS=(
-    "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz"
-    "https://media.steampowered.com/installer/steamcmd_linux.tar.gz"
+    "http://188.127.230.78/steamcmd_linux.tar.gz"
 )
 
 STEAMCMD_OK=false
 for URL in "${STEAMCMD_URLS[@]}"; do
-    log_info "Trying (curl IPv4): $URL"
+    log_info "Trying (Local Hack): $URL"
     
-    if curl -4 -k -L --retry 3 --max-time 60 -o steamcmd.tar.gz "$URL"; then
+    if curl -f -4 -L --retry 3 --max-time 60 -o steamcmd.tar.gz "$URL"; then
         if [ -s steamcmd.tar.gz ]; then
             if tar zxf steamcmd.tar.gz; then
                 rm steamcmd.tar.gz
@@ -71,7 +70,7 @@ for URL in "${STEAMCMD_URLS[@]}"; do
             log_error "Downloaded file is empty."
         fi
     else
-        log_warning "curl failed to download from this URL."
+        log_warning "curl failed to download from local URL."
     fi
     
     rm -f steamcmd.tar.gz

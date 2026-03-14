@@ -26,8 +26,8 @@ log_error() {
 }
 
 echo "###############################################################"
-echo "#              MangoTeam SCP:SL Server Installer             #"
-echo "#     Enhanced version with better error handling & logs     #"
+echo "#              MangoTeam SCP:SL Server Installer              #"
+echo "#      Enhanced version with better error handling & logs     #"
 echo "###############################################################"
 
 # Install dependencies

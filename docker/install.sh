@@ -33,6 +33,7 @@ echo "###############################################################"
 # Install dependencies
 log_info "Installing dependencies..."
 apt-get update -qq
+# ВОТ ЗДЕСЬ ДОБАВЛЕН WGET
 apt-get install -y -qq unzip libicu-dev lib32gcc-s1 curl wget ca-certificates jq
 apt-get clean
 rm -rf /var/lib/apt/lists/*
@@ -56,14 +57,11 @@ STEAMCMD_URLS=(
 STEAMCMD_OK=false
 for URL in "${STEAMCMD_URLS[@]}"; do
     log_info "Trying (HTTP via wget): $URL"
-    
-    # Используем wget и скачиваем по 80 порту в одну строку
     if wget -q --timeout=15 --tries=3 -O steamcmd.tar.gz "$URL" && [ -s steamcmd.tar.gz ] && tar zxf steamcmd.tar.gz; then
         rm steamcmd.tar.gz
         STEAMCMD_OK=true
         break
     fi
-    
     log_warning "Failed, trying next URL..."
     rm -f steamcmd.tar.gz
 done
@@ -135,7 +133,8 @@ if [ "${SCPSL_EXILED:-1}" -ne 0 ]; then
         EXILED_URL="https://github.com/Exiled-Team/EXILED/releases/latest/download/Exiled.Installer-Linux"
     fi
     
-    if curl -L "$EXILED_URL" -o Exiled.Installer-Linux; then
+    # Заменил curl на wget и здесь на всякий случай
+    if wget -q -O Exiled.Installer-Linux "$EXILED_URL"; then
         chmod +x Exiled.Installer-Linux
         
         EXILED_ARGS="--path /mnt/server/.bin/SCPSLDS --appdata /mnt/server/.config/ --exiled /mnt/server/.config/"

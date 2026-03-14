@@ -3,7 +3,7 @@
 set -e  # Прерывать выполнение при ошибках
 
 # Цвета для вывода
-RED='\033[0;31m'
+RED='\033[0;31m' 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
@@ -49,23 +49,20 @@ mkdir -p /mnt/server/.bin/SteamCMD
 cd /mnt/server/.bin/SteamCMD
 
 STEAMCMD_URLS=(
-    "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz"
-    "https://media.steampowered.com/installer/steamcmd_linux.tar.gz"
+    "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz"
+    "https://media.steampowered.com/installer/steamcmd_linux.tar.gz"
 )
 
 STEAMCMD_OK=false
 for URL in "${STEAMCMD_URLS[@]}"; do
-    log_info "Trying: $URL"
-    # Добавлен флаг -k для обхода проблем с сертификатами в контейнере
-    if curl -k -L --retry 3 --retry-delay 3 --max-time 60 "$URL" -o steamcmd.tar.gz 2>/dev/null \
-       && [ -s steamcmd.tar.gz ] \
-       && tar zxf steamcmd.tar.gz; then
-        rm steamcmd.tar.gz
-        STEAMCMD_OK=true
-        break
-    fi
-    log_warning "Failed, trying next URL..."
-    rm -f steamcmd.tar.gz
+    log_info "Trying: $URL"
+    if curl -k -L --retry 3 --retry-delay 3 --max-time 60 "$URL" -o steamcmd.tar.gz 2>/dev/null && [ -s steamcmd.tar.gz ] && tar zxf steamcmd.tar.gz; then
+        rm steamcmd.tar.gz
+        STEAMCMD_OK=true
+        break
+    fi
+    log_warning "Failed, trying next URL..."
+    rm -f steamcmd.tar.gz
 done
 
 if [ "$STEAMCMD_OK" = false ]; then
